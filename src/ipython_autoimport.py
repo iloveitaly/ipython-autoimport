@@ -42,8 +42,8 @@ def _get_import_cache(ipython):
     import_cache = {}
 
     def _format_alias(alias):
-        return ("import {0.name} as {0.asname}" if alias.asname
-                else "import {0.name}").format(alias)
+        return (f"import {alias.name} as {alias.asname}" if alias.asname
+                else f"import {alias.name}")
 
     class Visitor(ast.NodeVisitor):
         def visit_Import(self, node):
@@ -56,7 +56,7 @@ def _get_import_cache(ipython):
                 return
             for alias in node.names:
                 (import_cache.setdefault(alias.asname or alias.name, set())
-                 .add("from {} {}".format(node.module, _format_alias(alias))))
+                 .add(f"from {node.module} {_format_alias(alias)}"))
 
     for _, _, entry in (
             ipython.history_manager.get_tail(
@@ -120,13 +120,13 @@ class _SubmoduleAutoImporterModule(ModuleType):
                     self.__ipython, value)
             return value
         except AttributeError:
-            import_target = "{}.{}".format(self.__name__, name)
+            import_target = f"{self.__name__}.{name}"
             try:
                 submodule = importlib.import_module(import_target)
             except getattr(builtins, "ModuleNotFoundError", ImportError):
                 pass  # Py<3.6.
             else:
-                _report(self.__ipython, "import {}".format(import_target))
+                _report(self.__ipython, f"import {import_target}")
                 return _make_submodule_autoimporter_module(
                     self.__ipython, submodule)
             raise  # Raise AttributeError without chaining ImportError.
@@ -173,7 +173,7 @@ class _AutoImporterMap(dict):
             except AttributeError:
                 pass
             # Find single matching import, if any.
-            imports = self._import_cache.get(name, {"import {}".format(name)})
+            imports = self._import_cache.get(name, {f"import {name}"})
             if len(imports) != 1:
                 if len(imports) > 1:
                     _report(self._ipython,
