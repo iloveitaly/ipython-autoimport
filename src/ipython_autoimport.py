@@ -123,8 +123,14 @@ class _SubmoduleAutoImporterModule(ModuleType):
             import_target = f"{self.__name__}.{name}"
             try:
                 submodule = importlib.import_module(import_target)
-            except getattr(builtins, "ModuleNotFoundError", ImportError):
-                pass  # Py<3.6.
+            except ModuleNotFoundError:
+                pass
+            except Exception as exc:
+                # In theory we should just catch ModuleNotFoundError, but
+                # ome_types (inaccurately) raises ImportError instead.
+                _report(self.__ipython,
+                        f"import {import_target} caused {type(exc).__name__}: "
+                        f"{exc}")
             else:
                 _report(self.__ipython, f"import {import_target}")
                 return _make_submodule_autoimporter_module(
